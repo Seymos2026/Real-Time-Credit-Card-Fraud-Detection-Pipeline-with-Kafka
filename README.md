@@ -162,15 +162,7 @@ You should now see lines like this scrolling in Terminal 1:
 
 ---
 
-## 7. What's wired to the rubric
 
-| Deliverable | Where it lives | Points |
-|---|---|---|
-| Working pipeline (3 components live together) | `producer.py`, `stream_processor.py`, `consumer.py` | 35 |
-| Streams API usage (Faust `@app.agent`, not a raw loop) | `src/stream_processor.py` lines marked `THE STREAMS AGENT` | 20 |
-| ML model — trained offline, loaded once, score in every msg | `src/train.py` -> `.joblib`; `stream_processor.py` loads at import | 20 |
-| README with dataset, setup, run order, model perf | this file | 15 |
-| Video demo | `docs/demo_guide.md` + your link below | 10 |
 
 **Video link:**  https://youtu.be/leSPh4Gnr_Q
 
