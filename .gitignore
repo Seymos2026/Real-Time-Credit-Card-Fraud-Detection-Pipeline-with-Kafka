@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Local secrets
+.env
+
+# Faust local state
+faust-data/
+*-data/
+
+# Dataset (too large for Git; download separately)
+data/creditcard.csv
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Notebooks
+.ipynb_checkpoints/

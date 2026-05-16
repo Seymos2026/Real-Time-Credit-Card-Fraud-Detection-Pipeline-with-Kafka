@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real-Time Credit Card Fraud Detection — ENGR 5785G</title>
+<style>
+  :root {
+    --bg:        #0b1020;
+    --bg-soft:   #131a33;
+    --panel:     #1a2244;
+    --line:      #2a3566;
+    --text:      #e7ecf7;
+    --muted:     #93a0c3;
+    --accent:    #7c9cff;
+    --accent-2:  #34d399;
+    --warn:      #f87171;
+    --code-bg:   #0f1530;
+    --code-key:  #c084fc;
+    --code-str:  #34d399;
+    --code-com:  #6b7596;
+    --code-fn:   #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  body {
+    background: radial-gradient(1100px 600px at 80% -10%, #1e2a5e 0%, transparent 60%),
+                radial-gradient(900px 500px at -10% 110%, #2a1a4e 0%, transparent 60%),
+                var(--bg);
+  }
+  .deck { position: relative; height: 100vh; width: 100vw; }
+
+  .slide {
+    position: absolute; inset: 0;
+    padding: 64px 80px 88px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 350ms ease;
+    display: flex; flex-direction: column;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  h1 { font-size: 56px; line-height: 1.1; margin: 0 0 16px; letter-spacing: -0.02em; }
+  h2 { font-size: 40px; line-height: 1.15; margin: 0 0 24px; letter-spacing: -0.01em; }
+  h3 { font-size: 22px; margin: 0 0 8px; color: var(--accent); font-weight: 600; }
+  p, li { font-size: 22px; line-height: 1.55; color: var(--text); }
+  .muted { color: var(--muted); }
+  .accent { color: var(--accent); }
+  .ok { color: var(--accent-2); }
+  .warn { color: var(--warn); }
+  strong { font-weight: 700; }
+
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: 0.18em; font-size: 13px; color: var(--accent);
+    margin-bottom: 18px; font-weight: 600;
+  }
+  .title-block { margin-top: 4vh; }
+  .author {
+    display: flex; gap: 24px; margin-top: 24px; color: var(--muted); font-size: 18px;
+    flex-wrap: wrap;
+  }
+  .author span { display: inline-flex; align-items: center; gap: 8px; }
+  .author span::before {
+    content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: stretch; flex: 1; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 24px;
+  }
+  .card h3 { margin-bottom: 10px; }
+  .card p, .card li { font-size: 18px; color: var(--text); }
+
+  .pipeline {
+    display: grid; grid-template-columns: 1fr 60px 1fr 60px 1fr;
+    align-items: center; gap: 8px;
+    margin: 24px 0 12px;
+  }
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 18px;
+    min-height: 150px;
+  }
+  .stage .name { font-weight: 700; font-size: 18px; color: var(--accent); margin-bottom: 6px; }
+  .stage .desc { font-size: 15px; color: var(--text); line-height: 1.4; }
+  .arrow {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 11px; gap: 4px;
+  }
+  .arrow .line {
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    position: relative;
+  }
+  .arrow .line::after {
+    content: ""; position: absolute; right: -1px; top: -5px;
+    border: 6px solid transparent; border-left-color: var(--accent-2);
+  }
+  .arrow .topic {
+    background: #0f1530; padding: 3px 8px; border-radius: 6px; font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px; color: var(--accent-2); border: 1px solid var(--line);
+  }
+
+  pre.code {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 15px; line-height: 1.55;
+    overflow: hidden;
+    color: var(--text);
+    white-space: pre;
+  }
+  pre.code .k { color: var(--code-key); }
+  pre.code .s { color: var(--code-str); }
+  pre.code .c { color: var(--code-com); font-style: italic; }
+  pre.code .fn { color: var(--code-fn); }
+  pre.code .hl { background: rgba(124,156,255,0.16); display: inline-block; width: 100%; }
+
+  .metrics {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 10px;
+  }
+  .metric {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; text-align: center;
+  }
+  .metric .v { font-size: 30px; font-weight: 700; color: var(--accent-2); }
+  .metric .l { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+
+  .terminals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 8px; }
+  .terminal {
+    background: #06091a; border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; font-family: ui-monospace, Menlo, monospace;
+  }
+  .terminal .bar {
+    background: #11173a; padding: 8px 12px; display: flex; gap: 6px; align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+  .terminal .bar .dot {
+    width: 11px; height: 11px; border-radius: 50%; background: #2a3566;
+  }
+  .terminal .bar .dot.r { background: #ef4444; }
+  .terminal .bar .dot.y { background: #f59e0b; }
+  .terminal .bar .dot.g { background: #10b981; }
+  .terminal .bar .title { margin-left: 10px; font-size: 12px; color: var(--muted); }
+  .terminal .body { padding: 12px 14px; font-size: 13px; line-height: 1.45; min-height: 220px; }
+  .terminal .body .cmd { color: var(--accent); }
+  .terminal .body .out { color: var(--text); }
+  .terminal .body .ok-row { color: var(--accent-2); }
+  .terminal .body .fraud-row { color: var(--warn); }
+
+  ul.checks { list-style: none; padding-left: 0; }
+  ul.checks li {
+    padding: 10px 14px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  ul.checks li::before {
+    content: "✓"; color: var(--accent-2); font-weight: 700; margin-top: -2px;
+  }
+
+  .nav {
+    position: absolute; bottom: 22px; left: 0; right: 0; display: flex;
+    justify-content: center; align-items: center; gap: 18px; color: var(--muted);
+    font-size: 12px;
+  }
+  .dots { display: flex; gap: 6px; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #2a3566;
+    transition: background 200ms;
+  }
+  .dot.active { background: var(--accent); }
+  .hint { font-size: 11px; color: #6b7596; }
+
+  .badge {
+    display: inline-block;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 13px; color: var(--muted);
+    margin-right: 8px; margin-bottom: 8px;
+  }
+  .badge.accent { color: var(--accent); border-color: var(--accent); }
+  .badge.ok { color: var(--accent-2); border-color: var(--accent-2); }
+
+  .footer {
+    position: absolute; bottom: 22px; right: 24px;
+    color: var(--muted); font-size: 12px;
+  }
+  .footer .num { color: var(--accent); font-weight: 700; }
+
+  .corner-tag {
+    position: absolute; top: 28px; right: 32px;
+    color: var(--muted); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  .big-num {
+    font-size: 96px; font-weight: 800; letter-spacing: -0.04em; color: var(--accent);
+    line-height: 1;
+  }
+
+  table.perf {
+    border-collapse: collapse; width: 100%; font-size: 18px; margin-top: 8px;
+    background: var(--panel); border-radius: 12px; overflow: hidden;
+  }
+  table.perf th, table.perf td {
+    padding: 12px 16px; text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  table.perf th { color: var(--muted); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
+  table.perf tr:last-child td { border-bottom: 0; }
+  table.perf .best td { background: rgba(52, 211, 153, 0.08); }
+  table.perf .best td:first-child { color: var(--accent-2); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1. TITLE -->
+  <section class="slide active">
+    <div class="title-block">
+      <div class="eyebrow">ENGR 5785G — Assignment 1</div>
+      <h1>Real-Time Credit Card<br>Fraud Detection</h1>
+      <p class="muted" style="font-size: 24px; margin-top: 8px;">
+        A live streaming ML pipeline built on Apache Kafka, Faust, and scikit-learn.
+      </p>
+      <div class="author">
+        <span>Ahmed Seyam</span>
+        <span>Confluent Cloud + Faust Streams API</span>
+        <span>May 2026</span>
+      </div>
+      <div style="margin-top: 36px;">
+        <span class="badge accent">Python 3.11</span>
+        <span class="badge accent">Apache Kafka</span>
+        <span class="badge accent">Faust Streams</span>
+        <span class="badge accent">scikit-learn</span>
+        <span class="badge accent">Random Forest</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. THE PROBLEM -->
+  <section class="slide">
+    <div class="corner-tag">The Problem</div>
+    <h2>Catching fraud the moment it happens.</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>The challenge</h3>
+        <p>Credit card fraud is rare — about <strong>0.17%</strong> of transactions — but every second of delay between swipe and detection means more money lost. Batch detection (overnight jobs) is too slow.</p>
+      </div>
+      <div class="card">
+        <h3>The assignment</h3>
+        <p>Build a complete streaming pipeline: read rows from a public dataset, push them through Kafka as live events, run an ML model on every record via a real Streams API, and publish the predictions to an output topic.</p>
+      </div>
+      <div class="card">
+        <h3>Why Kafka</h3>
+        <p>Industry-standard backbone for event streaming. Decouples producers from consumers, scales horizontally, and gives us the buffer we need to apply ML at speed without losing messages.</p>
+      </div>
+      <div class="card">
+        <h3>Why Faust</h3>
+        <p>Python equivalent of Kafka Streams. Lets us define an <code>@app.agent</code> that consumes, transforms, and emits — the official Streams API pattern, no plain consumer loops.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. ARCHITECTURE -->
+  <section class="slide">
+    <div class="corner-tag">Architecture</div>
+    <h2>Three components, one continuous flow.</h2>
+    <div class="pipeline">
+      <div class="stage">
+        <div class="name">1 · Producer</div>
+        <div class="desc">Reads <code>creditcard.csv</code> row by row and publishes JSON to Kafka at ~1 row / second.</div>
+      </div>
+      <div class="arrow"><span class="topic">raw-transactions</span><div class="line"></div></div>
+      <div class="stage">
+        <div class="name">2 · Faust Stream Processor</div>
+        <div class="desc">Loads the trained <code>.joblib</code> model once. An <code>@app.agent</code> scores every incoming event with <code>predict_proba</code>.</div>
+      </div>
+      <div class="arrow"><span class="topic">fraud-predictions</span><div class="line"></div></div>
+      <div class="stage">
+        <div class="name">3 · Output Consumer</div>
+        <div class="desc">Subscribes to predictions and renders a live, color-coded table in the terminal as messages arrive.</div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top: 24px;">
+      <div class="card"><h3>Cluster</h3><p>Confluent Cloud (managed Kafka), SASL_SSL + PLAIN authentication.</p></div>
+      <div class="card"><h3>Topics</h3><p><code>raw-transactions</code> (input) → <code>fraud-predictions</code> (output). 6 partitions, RF=3.</p></div>
+      <div class="card"><h3>Model</h3><p>Random Forest classifier wrapped in a scikit-learn <code>Pipeline</code> with <code>StandardScaler</code>.</p></div>
+    </div>
+  </section>
+
+  <!-- 4. DATASET -->
+  <section class="slide">
+    <div class="corner-tag">Dataset</div>
+    <h2>Kaggle Credit Card Fraud — 284,807 transactions.</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>What's in it</h3>
+        <p><strong>30 numeric features:</strong> <code>Time</code>, <code>Amount</code>, and 28 anonymized PCA components <code>V1</code>–<code>V28</code> (the original features were stripped for confidentiality).</p>
+        <p style="margin-top:14px;"><strong>Label:</strong> <code>Class</code> = 0 (legit) or 1 (fraud).</p>
+      </div>
+      <div class="card">
+        <h3>The hard part</h3>
+        <p>Severe class imbalance: only <strong class="warn">492 fraud rows</strong> out of <strong>284,807</strong>. That's <strong>0.172%</strong>.</p>
+        <p style="margin-top:14px;">Naive accuracy is useless here — predicting "legit" every time still scores 99.83%. We track <strong>F1</strong> and <strong>ROC-AUC</strong> instead, and use <code>class_weight="balanced"</code> when training.</p>
+      </div>
+    </div>
+    <div class="metrics" style="margin-top: 18px;">
+      <div class="metric"><div class="v">284,807</div><div class="l">Transactions</div></div>
+      <div class="metric"><div class="v">30</div><div class="l">Features</div></div>
+      <div class="metric"><div class="v">492</div><div class="l">Fraud cases</div></div>
+      <div class="metric"><div class="v">0.172%</div><div class="l">Fraud rate</div></div>
+      <div class="metric"><div class="v">2 days</div><div class="l">Time window</div></div>
+    </div>
+  </section>
+
+  <!-- 5. MODEL -->
+  <section class="slide">
+    <div class="corner-tag">The ML Model</div>
+    <h2>Trained offline, loaded once, used everywhere.</h2>
+    <div class="grid-2">
+      <div>
+        <h3 style="margin-bottom:14px;">Two candidates, best F1 wins</h3>
+        <table class="perf">
+          <tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr>
+          <tr><td>Logistic Regression</td><td>0.9740</td><td>0.058</td><td>0.918</td><td>0.110</td><td>0.971</td></tr>
+          <tr class="best"><td>Random Forest ★</td><td>0.9996</td><td>0.947</td><td>0.755</td><td>0.840</td><td>0.964</td></tr>
+        </table>
+        <p class="muted" style="font-size:15px; margin-top:12px;">
+          Numbers from <code>models/metrics.json</code> after running <code>python -m src.train</code>.
+          Random Forest wins on F1 (the metric that matters for imbalanced classification).
+        </p>
+      </div>
+      <div>
+        <h3 style="margin-bottom:14px;">Training pipeline</h3>
+<pre class="code">
+<span class="k">from</span> sklearn.pipeline <span class="k">import</span> Pipeline
+<span class="k">from</span> sklearn.preprocessing <span class="k">import</span> StandardScaler
+<span class="k">from</span> sklearn.ensemble <span class="k">import</span> RandomForestClassifier
+
+pipe = Pipeline([
+    (<span class="s">"scaler"</span>, StandardScaler()),
+    (<span class="s">"clf"</span>, RandomForestClassifier(
+        n_estimators=<span class="fn">120</span>,
+        max_depth=<span class="fn">12</span>,
+        class_weight=<span class="s">"balanced"</span>,
+        n_jobs=-<span class="fn">1</span>,
+        random_state=<span class="fn">42</span>,
+    )),
+])
+pipe.<span class="fn">fit</span>(X_train, y_train)
+<span class="c"># Saved as a single .joblib artifact</span>
+joblib.<span class="fn">dump</span>({<span class="s">"pipeline"</span>: pipe, ...}, MODEL_PATH)
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. FAUST STREAMS API -->
+  <section class="slide">
+    <div class="corner-tag">Streams API</div>
+    <h2>The Faust agent — the heart of the pipeline.</h2>
+    <p class="muted" style="margin-bottom: 14px;">This is the part the rubric grades for "Streams API usage." No raw consumer loops — every event flows through an <code>@app.agent</code>.</p>
+<pre class="code">
+app = faust.<span class="fn">App</span>(
+    <span class="s">"fraud-detector"</span>,
+    broker=<span class="s">"kafka://&lt;confluent-cloud&gt;"</span>,
+    broker_credentials=faust.<span class="fn">SASLCredentials</span>(...),
+    topic_replication_factor=<span class="fn">3</span>,
+    topic_partitions=<span class="fn">6</span>,
+)
+
+raw_topic         = app.<span class="fn">topic</span>(<span class="s">"raw-transactions"</span>)
+predictions_topic = app.<span class="fn">topic</span>(<span class="s">"fraud-predictions"</span>, value_type=Prediction)
+
+<span class="c"># Load the trained model exactly once, at process start</span>
+MODEL = joblib.<span class="fn">load</span>(MODEL_PATH)[<span class="s">"pipeline"</span>]
+
+<span class="hl"><span class="k">@app.agent</span>(raw_topic)                              <span class="c"># &lt;-- THE STREAMS API</span></span>
+<span class="hl"><span class="k">async def</span> <span class="fn">process</span>(stream):</span>
+<span class="hl">    <span class="k">async for</span> raw <span class="k">in</span> stream:                       <span class="c"># consume</span></span>
+<span class="hl">        payload = json.<span class="fn">loads</span>(raw)</span>
+<span class="hl">        proba   = <span class="fn">float</span>(MODEL.<span class="fn">predict_proba</span>(vectorise(payload))[<span class="fn">0</span>, <span class="fn">1</span>])    <span class="c"># predict</span></span>
+<span class="hl">        <span class="k">await</span> predictions_topic.<span class="fn">send</span>(value=<span class="fn">Prediction</span>(...))         <span class="c"># produce</span></span>
+</pre>
+  </section>
+
+  <!-- 7. DEMO TIME -->
+  <section class="slide">
+    <div class="corner-tag">Demo</div>
+    <h2>Live demo — three terminals, one pipeline.</h2>
+    <div class="terminals">
+      <div class="terminal">
+        <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">Terminal 1 · output consumer</span></div>
+        <div class="body">
+          <div class="cmd">$ python -m src.consumer</div>
+          <div class="out muted">subscribed to 'fraud-predictions'…</div>
+          <div class="out muted">TIME       FLAG  AMOUNT  P(FRAUD)</div>
+          <div class="ok-row">14:02:11  OK    $12.99  0.0021</div>
+          <div class="fraud-row">14:02:12  FRAUD $978.40 0.8843</div>
+          <div class="ok-row">14:02:13  OK    $44.12  0.0103</div>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">Terminal 2 · Faust worker</span></div>
+        <div class="body">
+          <div class="cmd">$ faust -A src.stream_processor worker</div>
+          <div class="out muted">loaded model 'random_forest'</div>
+          <div class="out muted">[^Worker]: Ready</div>
+          <div class="out">[stream] legit  p=0.0021</div>
+          <div class="fraud-row">[stream] FRAUD  p=0.8843</div>
+          <div class="out">[stream] legit  p=0.0103</div>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">Terminal 3 · producer</span></div>
+        <div class="body">
+          <div class="cmd">$ python -m src.producer</div>
+          <div class="out muted">streaming data/creditcard.csv</div>
+          <div class="out muted">→ raw-transactions every 1.00s</div>
+          <div class="out">[producer] sent 10 rows</div>
+          <div class="out">[producer] sent 20 rows</div>
+          <div class="out">[producer] sent 30 rows</div>
+        </div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top: 20px; font-size:18px;">
+      Start order matters: <strong class="accent">consumer → Faust worker → producer</strong>. The consumer uses <code>auto.offset.reset=latest</code>, so it needs to subscribe before the producer starts pushing.
+    </p>
+  </section>
+
+  <!-- 8. WHAT TO WATCH FOR -->
+  <section class="slide">
+    <div class="corner-tag">What to look for</div>
+    <h2>Reading the live output.</h2>
+    <div class="grid-2">
+      <div>
+        <ul class="checks">
+          <li><strong>FLAG column</strong> — <span class="ok">OK</span> for legit predictions, <span class="warn">FRAUD</span> when <code>p ≥ 0.5</code>.</li>
+          <li><strong>P(FRAUD)</strong> — the model's probability that this transaction is fraudulent.</li>
+          <li><strong>ACTUAL</strong> — ground-truth label that travelled along with the event. <code>0(OK)</code> means the model agreed, <code>1(MISS)</code> means it disagreed.</li>
+          <li><strong>Rolling summary</strong> — every 25 messages, the consumer prints processed count and flag rate.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>What proves the pipeline works</h3>
+        <p style="margin-bottom: 14px;">Three things, visible at the same time:</p>
+        <p>① Terminal 3 is sending rows.</p>
+        <p>② Terminal 2's <code>[stream]</code> lines appear within ~1 second of each producer send.</p>
+        <p>③ Terminal 1's predictions arrive in real time with the correct ML score on every row.</p>
+        <p style="margin-top:14px; color: var(--muted); font-size:16px;">That's the full pipeline: source → Kafka → Streams ML → sink.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. WRAP -->
+  <section class="slide">
+    <div class="corner-tag">Wrap</div>
+    <h2>Built end-to-end, ready to ship.</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Deliverables met</h3>
+        <ul class="checks">
+          <li>Three components running concurrently — producer, Faust processor, consumer.</li>
+          <li>Streams API used correctly (<code>@app.agent</code>, not a raw consumer loop).</li>
+          <li>Model trained offline, loaded once, prediction in every output message.</li>
+          <li>README documents dataset, setup, run order, model performance.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>What I'd build next</h3>
+        <p>① Anomaly windowing: count fraud rate per minute as a Faust <code>Table</code>.</p>
+        <p>② Alert sink: route high-probability fraud (<code>p &gt; 0.9</code>) to a separate topic with a Slack webhook consumer.</p>
+        <p>③ Model retraining loop: periodically retrain on the predictions topic + verified labels.</p>
+      </div>
+    </div>
+    <div style="margin-top: 24px; display: flex; gap: 14px; flex-wrap: wrap;">
+      <span class="badge ok">github.com/&lt;you&gt;/credit-card-fraud-streaming</span>
+      <span class="badge">Faust 0.11.3</span>
+      <span class="badge">aiokafka 0.10.0</span>
+      <span class="badge">scikit-learn 1.5.2</span>
+    </div>
+    <p class="muted" style="margin-top: 28px; font-size: 18px;">Thank you — happy to take questions.</p>
+  </section>
+
+  <div class="nav">
+    <div class="dots" id="dots"></div>
+    <div class="hint">← / → arrows · Space · or click to advance</div>
+  </div>
+  <div class="footer"><span class="num" id="cur">1</span> / <span id="tot">9</span></div>
+
+</div>
+
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const dotsEl = document.getElementById("dots");
+  const cur = document.getElementById("cur");
+  const tot = document.getElementById("tot");
+  let idx = 0;
+
+  tot.textContent = slides.length;
+  slides.forEach((_, i) => {
+    const d = document.createElement("div");
+    d.className = "dot" + (i === 0 ? " active" : "");
+    d.addEventListener("click", () => go(i));
+    dotsEl.appendChild(d);
+  });
+
+  function go(n) {
+    idx = (n + slides.length) % slides.length;
+    slides.forEach((s, i) => s.classList.toggle("active", i === idx));
+    dotsEl.querySelectorAll(".dot").forEach((d, i) => d.classList.toggle("active", i === idx));
+    cur.textContent = idx + 1;
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); go(idx + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(idx - 1); }
+    else if (e.key === "Home") { go(0); }
+    else if (e.key === "End") { go(slides.length - 1); }
+    else if (e.key === "f" || e.key === "F") {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // click anywhere advances
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".dot") || e.target.closest(".nav")) return;
+    go(idx + 1);
+  });
+})();
+</script>
+</body>
+</html>
