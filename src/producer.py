@@ -1,9 +1,4 @@
-"""
-Kafka producer: streams creditcard.csv to the raw-transactions topic at ~1 row/sec.
 
-Run:
-    python -m src.producer
-"""
 from __future__ import annotations
 
 import json

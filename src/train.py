@@ -1,20 +1,3 @@
-"""
-Offline training for the Credit Card Fraud model.
-
-Run once before starting the streaming pipeline:
-
-    python -m src.train
-
-Outputs:
-    models/fraud_model.joblib   -- pipeline with StandardScaler + classifier
-    models/metrics.json         -- accuracy, precision, recall, F1, ROC-AUC
-
-The dataset is the Kaggle "Credit Card Fraud Detection" set
-(https://kaggle.com/datasets/mlg-ulb/creditcardfraud) -- 284,807 transactions
-with 30 features (Time, V1..V28, Amount) and a binary Class label
-(0 = legit, 1 = fraud). Fraud is ~0.17% of rows, so we use class_weight
-to handle the imbalance.
-"""
 from __future__ import annotations
 
 import json

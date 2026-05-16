@@ -1,4 +1,4 @@
-"""Centralised configuration loaded from environment variables / .env."""
+
 from __future__ import annotations
 
 import os

@@ -78,8 +78,7 @@ credit-card-fraud-streaming/
 │   ├── producer.py           # raw-transactions producer
 │   ├── stream_processor.py   # Faust @app.agent --> predictions
 │   └── consumer.py           # fraud-predictions output consumer
-└── docs/
-    └── demo_guide.md     # 3-terminal video walkthrough
+
 ```
 
 ---

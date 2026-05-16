@@ -1,13 +1,4 @@
-"""
-One-shot helper that creates the two topics this project uses.
 
-You can also create them by hand in the Confluent Cloud UI:
-    - raw-transactions       (6 partitions, 1 replica is fine on Basic)
-    - fraud-predictions      (6 partitions)
-
-Run:
-    python -m scripts.create_topics
-"""
 from __future__ import annotations
 
 import sys

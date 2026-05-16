@@ -1,9 +1,4 @@
-"""
-Output consumer: read the fraud-predictions topic and print rows to the console.
 
-Run:
-    python -m src.consumer
-"""
 from __future__ import annotations
 
 import json

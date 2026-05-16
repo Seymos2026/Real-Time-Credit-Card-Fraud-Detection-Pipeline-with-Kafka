@@ -1,10 +1,4 @@
-"""
-Faust stream processor: consume raw-transactions, run the trained model,
-publish enriched predictions to fraud-predictions.
 
-Run:
-    faust -A src.stream_processor worker -l info
-"""
 from __future__ import annotations
 
 import sys
@@ -17,11 +11,6 @@ import numpy as np
 
 from . import config
 
-# ---------------------------------------------------------------------------
-# Load the trained model exactly ONCE at process start. The processor itself
-# is just a Faust agent calling .predict() on each event -- this is the
-# "ML in every output message" requirement.
-# ---------------------------------------------------------------------------
 try:
     _artifact = joblib.load(config.MODEL_PATH)
     MODEL = _artifact["pipeline"]
@@ -35,9 +24,6 @@ except FileNotFoundError:
     )
 
 
-# ---------------------------------------------------------------------------
-# Faust schema definitions
-# ---------------------------------------------------------------------------
 class RawTxn(faust.Record, serializer="json"):
     """Incoming row from the producer. Extra fields are tolerated."""
 
@@ -61,9 +47,7 @@ class Prediction(faust.Record, serializer="json"):
     actual_label: Optional[int]
 
 
-# ---------------------------------------------------------------------------
-# Faust app -- Confluent Cloud requires SASL_SSL, configured via broker_credentials
-# ---------------------------------------------------------------------------
+
 app = faust.App(
     "fraud-detector",
     broker=config.faust_broker_url(),
@@ -89,9 +73,7 @@ def _vectorise(payload: dict) -> np.ndarray:
     return np.array([[payload.get(col, 0.0) for col in FEATURE_COLUMNS]], dtype=float)
 
 
-# ---------------------------------------------------------------------------
-# THE STREAMS AGENT -- this is the Streams API piece the rubric wants
-# ---------------------------------------------------------------------------
+
 @app.agent(raw_topic)
 async def process(stream):
     """Consume raw transactions, score them, publish predictions."""
