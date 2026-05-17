@@ -163,7 +163,7 @@ You should now see lines like this scrolling in Terminal 1:
 
 
 
-**Video link:**  https://youtu.be/leSPh4Gnr_Q
+**Video link:**  https://www.youtube.com/watch?v=pa6P8VkBqJE
 
 ---
 
